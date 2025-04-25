@@ -9,6 +9,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+/**
+ * Service class for managing user-related operations such as creation, retrieval,
+ * updating, and deletion of users.
+ */
 @Service
 public class UserService {
 
@@ -17,27 +21,41 @@ public class UserService {
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
+    /**
+     * Creates and saves a new user with a hashed password.
+     *
+     * @param username the desired username for the new user
+     * @param email the user's email address
+     * @param password the plain text password to be hashed and stored
+     * @return the newly created {@link User} entity
+     */
     public User createUser(String username, String email, String password) {
         String hashedPassword = passwordEncoder.encode(password);
         User user = new User(username, email, hashedPassword);
         return userRepository.save(user);
     }
 
-    public boolean deleteUser(Long userId) {
-        Optional<User> user = userRepository.findById(userId);
-        if (user.isPresent()) {
-            userRepository.deleteById(userId);
-            return true;
-        }
-        return false;
+    /**
+     * Retrieves a user by their unique ID.
+     *
+     * @param userId the ID of the user to retrieve
+     * @return an {@link Optional} containing the {@link User} if found, or an empty {@link Optional} if not
+     */
+    public Optional<User> findUserById(Long userId) {
+        return userRepository.findById(userId);
     }
 
+
     /**
-     * Updated user details. Throws a runtime exception if the new username or email are already taken by
-     * another user.
-     * @param userId The id of the user that needs to be updated
-     * @param userDto Data transfer object containing the fields that need to be updated
-     * @return Optional User, throw exception if username or email violate uniqueness
+     * Updates an existing user's details, such as username, email, or password.
+     * Performs uniqueness checks on the username and email.
+     *
+     * @param userId the ID of the user to update
+     * @param userDto the DTO containing updated user information
+     * @return an {@link Optional} containing the updated {@link User} if the update was successful,
+     *         or an empty {@link Optional} if the user was not found
+     * @throws RuntimeException if the new username or email already exists
+     * @throws IllegalArgumentException if the new password matches the existing password
      */
     public Optional<User> updateUser(Long userId, UserDTO userDto) throws RuntimeException {
         Optional<User> userOptional = userRepository.findById(userId);
@@ -65,11 +83,23 @@ public class UserService {
             }
             // save the updated user TODO: CHECK IF THIS SUCCESSFULLY SAVES THE NEW UPDATES
             return Optional.of(userRepository.save(existingUser));
-//            return Optional.of(existingUser);
         }
-
         return Optional.empty();
+    }
 
+    /**
+     * Deletes the user with the specified ID, if they exist.
+     *
+     * @param userId the ID of the user to delete
+     * @return {@code true} if the user was successfully deleted, {@code false} if the user was not found
+     */
+    public boolean deleteUser(Long userId) {
+        Optional<User> user = userRepository.findById(userId);
+        if (user.isPresent()) {
+            userRepository.deleteById(userId);
+            return true;
+        }
+        return false;
     }
 
 

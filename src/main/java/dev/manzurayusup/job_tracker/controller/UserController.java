@@ -11,6 +11,10 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
+/**
+ * REST controller for handling user-related operations such as creating,
+ * reading, updating, and deleting users.
+ */
 @RestController
 @RequestMapping("/users")
 public class UserController {
@@ -19,14 +23,13 @@ public class UserController {
     private UserService userService;
 
     /**
-     * Creates user given username, email and password (stores only hashed password).
-     * Returns success code and the newly created user upon success, or error code upon
-     * failure.
-     * TODO: implement validation of username, email and password
-     * @param username
-     * @param email
-     * @param password
-     * @return
+     * Creates a new user account with the given details.
+     *
+     * @param username the desired username
+     * @param email the user's email address
+     * @param password the user's password (will be hashed before saving)
+     * @return a {@link ResponseEntity} containing the created {@link User}
+     *         and HTTP status 201 (Created)
      */
     @PostMapping("/create")
     public ResponseEntity<?> createUser(@RequestParam String username,
@@ -39,34 +42,57 @@ public class UserController {
     }
 
     /**
-     * Deletes the user if the user exists, returns error code if not.
-     * @param userId
-     * @return
+     * Retrieves a user's details by ID.
+     *
+     * @param userId the ID of the user to fetch
+     * @return a {@link ResponseEntity} with the user's data and HTTP 200 if found,
+     *         or HTTP 404 (Not Found) if the user doesn't exist
      */
-    @DeleteMapping("delete/{userId}")
-    public ResponseEntity<String> deleteUser(@PathVariable Long userId) {
-        return userService.deleteUser(userId) ?
-                ResponseEntity.ok("User deleted successfully") :
-                ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
-
+    @GetMapping("/{userId}")
+    public ResponseEntity<?> getUserById(@PathVariable Long userId) {
+        Optional<User> user = userService.findUserById(userId);
+        return user.isPresent() ? ResponseEntity.ok(user) :
+                ResponseEntity.status(HttpStatus.BAD_REQUEST).body("No user with id: " + userId);
     }
 
+
     /**
-     * Update the user fields the user specifies. Returns error message if user does not exist, or if
-     * username or email is already taken.
-     * @param userId
-     * @param userDto
-     * @return
+     * Updates user details such as username, email, or password.
+     *
+     * @param userId the ID of the user to update
+     * @param userDto the DTO containing fields to update (optional fields)
+     * @return {@link ResponseEntity} containing the updated {@link User} and HTTP 200 if successful,
+     *         HTTP 400 if validation fails (e.g., duplicate username/email or invalid password),
+     *         or HTTP 404 if the user is not found
      */
     @PutMapping("update/{userId}")
     public ResponseEntity<?> updateUser(@PathVariable Long userId, @RequestBody UserDTO userDto) {
         try {
             Optional<User> updatedUser = userService.updateUser(userId, userDto);
-            return updatedUser.isPresent() ? ResponseEntity.ok(updatedUser.get()) : ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User " + userId + " not found.");
+            return updatedUser.isPresent() ?
+                    ResponseEntity.ok(updatedUser.get()) :
+                    ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User " + userId + " not found.");
         } catch (RuntimeException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
+
+    /**
+     * Deletes a user account by ID.
+     *
+     * @param userId the ID of the user to delete
+     * @return a {@link ResponseEntity} with a success message and HTTP 200,
+     *         or HTTP 404 if the user doesn't exist
+     */
+    @DeleteMapping("delete/{userId}")
+    public ResponseEntity<String> deleteUser(@PathVariable Long userId) {
+        return userService.deleteUser(userId) ?
+                ResponseEntity.ok("User " + userId + " deleted successfully") :
+                ResponseEntity.status(HttpStatus.NOT_FOUND).body("User " + userId + " not found");
+
+    }
+
+
 
 
 
